@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">계산기</string>
+    <string name="btn_back">뒤로</string>
+    <string name="btn_calc">계산</string>
+    <string name="btn_cancel">취소</string>
+    <string name="text_preview">미리보기</string>
+</resources>

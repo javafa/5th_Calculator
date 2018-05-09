@@ -1,8 +1,15 @@
 package com.kodonho.android.layoutbasic;
 
+import android.animation.Animator;
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
+import android.graphics.Color;
+import android.support.constraint.ConstraintLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.widget.Button;
 import android.widget.TextView;
 
@@ -11,13 +18,25 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener{
 
-    TextView result;
+    ConstraintLayout layout;
+    TextView result,preview;
+    View target;
+    float targetX,targetY;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        layout = findViewById(R.id.layout);
+        target = findViewById(R.id.target);
+        target.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                targetX=target.getX();
+                targetY=target.getY();
+            }
+        });
         result = findViewById(R.id.result);
+        preview = findViewById(R.id.preview);
         for(int i=0; i<10; i++){
             int id = getResources().getIdentifier("btn"+i, "id", getPackageName());
             findViewById(id).setOnClickListener(this);
@@ -33,8 +52,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void onClick(View v) {
-        String temp = result.getText().toString();
-        if("0".equals(temp)) temp = "";
+        String temp = preview.getText().toString();
+        // String 리소스를 코드에서 사용하기
+        String PRE = getResources().getString(R.string.text_preview);
+        if(PRE.equals(temp)) temp = "";
         switch(v.getId()){
             case R.id.btn0: temp += "0"; break;
             case R.id.btn1: temp += "1"; break;
@@ -55,7 +76,65 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 temp = calc(temp);
                 break;
         }
-        result.setText(temp);
+        runAnimation(v);
+        preview.setText(temp);
+    }
+
+    public void runAnimation(View current){
+        // 가상버튼 생성
+        final Button dummy = new Button(this);
+        // 레이아웃에 버튼을 추가하고
+        layout.addView(dummy);
+        // 버튼의 속성을 정의
+        dummy.setWidth(current.getWidth());
+        dummy.setHeight(current.getHeight());
+        dummy.setBackgroundColor(Color.GRAY);
+        dummy.setX(current.getX());
+        dummy.setY(current.getY());
+        dummy.setPivotX(50);
+        dummy.setPivotY(50);
+
+        Log.d("AniTest","targetX="+targetX+", targetY="+targetY);
+
+        ObjectAnimator aniX = ObjectAnimator.ofFloat(dummy,
+                View.X,
+                targetX);
+        ObjectAnimator aniY = ObjectAnimator.ofFloat(dummy,
+                View.Y,
+                targetY);
+        ObjectAnimator aniR = ObjectAnimator.ofFloat(dummy,
+                View.ROTATION,
+                720);
+        ObjectAnimator scaleX = ObjectAnimator.ofFloat(dummy,
+                View.SCALE_X,
+                0.2f);
+        ObjectAnimator scaleY = ObjectAnimator.ofFloat(dummy,
+                View.SCALE_Y,
+                0.2f);
+        AnimatorSet aniSet = new AnimatorSet();
+        aniSet.setDuration(1000);
+        aniSet.playTogether(aniX,aniY,aniR,scaleX,scaleY);
+        // 애니메이션 완료시 처리를 위한 리스너
+        aniSet.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animation) {
+
+            }
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                // 애니매이션이 완료되면 버튼을 제거한다
+                layout.removeView(dummy);
+            }
+            @Override
+            public void onAnimationCancel(Animator animation) {
+
+            }
+            @Override
+            public void onAnimationRepeat(Animator animation) {
+
+            }
+        });
+        aniSet.start();
     }
 
     public String calc(String str){
